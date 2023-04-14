@@ -1,0 +1,16 @@
+const User = require('../models/usersModel'); 
+
+const user = {
+    // 取得所有 user
+    async getUsers(req, res, next) {
+        const timeSort = req.query.timeSort == "asc" ? "createdAt":"-createdAt"; // 判斷排序
+        const q = req.query.q !== undefined ? {"name": new RegExp(req.query.q)} : {}; // 以正規表達式搜尋關鍵字
+        const posts = await User.find(q).sort(timeSort);
+
+        res.status(200).json({
+            posts: posts
+        })
+    }
+}
+
+module.exports = user;

@@ -1,0 +1,39 @@
+const Post = require('../models/postsModel');
+const User = require('../models/usersModel'); // 一定要載入 user 才能做關聯
+const appError = require("../service/appError");
+
+const post = {
+    // 取得所有貼文
+    async getPosts(req, res, next) {
+        const timeSort = req.query.timeSort == "asc" ? "createdAt":"-createdAt"; // 判斷排序
+        const q = req.query.q !== undefined ? {"content": new RegExp(req.query.q)} : {}; // 以正規表達式搜尋關鍵字
+
+        const posts = await Post.find(q).populate({  // 使用 populate() 關連到其他張表
+            path: "user", // 關連到哪一張表 (對應 schema 的 key)
+            select: "name photo" // 關連到這張表的哪些欄位
+        }).sort(timeSort);
+
+        res.status(200).json({
+            posts: posts
+        })
+    },
+    // 新增一則貼文
+    async createPost(req, res, next) {
+        if(req.body.content == undefined){
+            // next(Error)裡放參數，會直接將自定義 Error 進行錯誤處理 (傳到 app.use(function(err,req,res,next){...})
+            return next(appError(400,"你沒有填寫 content 資料"))
+        }
+        // req.body 可以取得接收到的參數
+        // 建議 create 把欄位都列出來，不要直接新增整個 req.body，避免 sql injection
+        const newPost = await Post.create({
+            user: req.body.user,
+            content: req.body.content,
+        });
+        res.status(200).json({
+            status: "success",
+            posts: newPost
+        })
+    }
+}
+
+module.exports = post;
